@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 
 <head>
     <meta charset="UTF-8">
@@ -97,20 +97,24 @@
             position: absolute;
             left: 0;
             top: 0;
-            transition: background-color 0.5s ease;
+            transition: background-color 0.5s ease, width 0.5s ease;
         }
 
         /* 根据进度条的完成百分比改变颜色 */
         .progress-bar.low {
-            background-color: #d3d3d3;
+            background-color: #CDDC39;
         }
 
         .progress-bar.medium {
-            background-color: #ff9900;
+            background-color: #8BC34A;
         }
 
         .progress-bar.high {
             background-color: #4CAF50;
+        }
+        
+        .progress-bar.finish {
+            background-color: #009688;
         }
     </style>
 </head>
@@ -141,8 +145,8 @@
         const currentDate = new Date();
 
         // 从 local Storage 加载计划
-        const todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || [];
-        const reviewPlansStatus = JSON.parse(localStorage.getItem('reviewPlansStatus')) || {};
+        const todayPlans = JSON.parse(localStorage.getItem('todayPlans')) ?? [];
+        const reviewPlansStatus = JSON.parse(localStorage.getItem('reviewPlansStatus')) ?? {};
 
         // 添加计划
         function addPlan() {
@@ -225,36 +229,38 @@
         function displayProgress() {
             const todayCompleted = todayPlans.filter(plan => plan.completed).length;
             const todayTotal = todayPlans.length;
-            const todayProgress = todayTotal > 0 ? (todayCompleted / todayTotal * 100).toFixed(0) : 0;
+            const todayProgress = todayTotal > 0 ? (todayCompleted / todayTotal * 100) : 0;
 
             const reviewCompleted = Object.values(reviewPlansStatus).filter(status => status).length;
             const reviewTotal = Object.keys(reviewPlansStatus).length;
-            const reviewProgress = reviewTotal > 0 ? (reviewCompleted / reviewTotal * 100).toFixed(0) : 0;
+            const reviewProgress = reviewTotal > 0 ? (reviewCompleted / reviewTotal * 100) : 0;
 
             const todayProgressBar = document.getElementById('today-progress-bar');
             const reviewProgressBar = document.getElementById('review-progress-bar');
 
             todayProgressBar.style.width = `${todayProgress}%`;
-            todayProgressBar.textContent = `${todayProgress}%`;
+            todayProgressBar.textContent = `${todayProgress.toFixed(0)}%`;
             updateProgressBarColor(todayProgressBar, todayProgress);
 
             reviewProgressBar.style.width = `${reviewProgress}%`;
-            reviewProgressBar.textContent = `${reviewProgress}%`;
+            reviewProgressBar.textContent = `${reviewProgress.toFixed(0)}%`;
             updateProgressBarColor(reviewProgressBar, reviewProgress);
         }
 
         // 更新进度条的颜色
         function updateProgressBarColor(progressBar, progress) {
-            const container = progressBar.parentElement;
             if (progress < 33) {
-                container.classList.remove('high', 'medium');
-                container.classList.add('low');
+                progressBar.classList.remove('high', 'medium', 'finish');
+                progressBar.classList.add('low');
             } else if (progress < 67) {
-                container.classList.remove('low', 'high');
-                container.classList.add('medium');
+                progressBar.classList.remove('low', 'high', 'finish');
+                progressBar.classList.add('medium');
+            } else if (progress < 100) {
+                progressBar.classList.remove('low', 'medium', 'finish');
+                progressBar.classList.add('high');
             } else {
-                container.classList.remove('low', 'medium');
-                container.classList.add('high');
+                progressBar.classList.remove('low', 'medium', 'high');
+                progressBar.classList.add('finish');
             }
         }
 
