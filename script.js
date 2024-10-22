@@ -1,8 +1,8 @@
 // 获取当前日期
 const currentDate = new Date();
 
-// 存储今天的计划
-const todayPlans = [];
+// 从localStorage加载计划
+const todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || [];
 
 // 添加计划
 function addPlan() {
@@ -10,9 +10,15 @@ function addPlan() {
     const plan = planInput.value.trim();
     if (plan) {
         todayPlans.push({ plan: plan, completed: false });
+        savePlans();
         planInput.value = '';
         displayTodayPlans();
     }
+}
+
+// 保存计划到localStorage
+function savePlans() {
+    localStorage.setItem('todayPlans', JSON.stringify(todayPlans));
 }
 
 // 显示今天的计划
@@ -29,25 +35,28 @@ function displayTodayPlans() {
 
 // 切换计划的完成状态
 function toggleComplete(index) {
-    const planObj = todayPlans[index];
-    planObj.completed = !planObj.completed;
+    todayPlans[index].completed = !todayPlans[index].completed;
+    savePlans();
     displayTodayPlans();
 }
 
 // 打印今天应该复习的日期
 function printReviewDates(currentDate) {
-    // 复习间隔（以天为单位）
     const intervals = [1, 2, 4, 7, 15, 30, 60, 90, 180, 365];
     const reviewDatesList = document.getElementById('review-plans-list');
     reviewDatesList.innerHTML = '';
 
+    const uniqueDates = new Set();
     intervals.forEach((interval) => {
         const reviewDate = new Date(currentDate);
         reviewDate.setDate(currentDate.getDate() - interval);
-        const formattedDate = `${reviewDate.getFullYear()}-${reviewDate.getMonth() + 1}-${reviewDate.getDate()}`;
-        const li = document.createElement('li');
-        li.textContent = `今天应该复习的日期：${formattedDate}`;
-        reviewDatesList.appendChild(li);
+        const formattedDate = `${reviewDate.getFullYear()}-${(reviewDate.getMonth() + 1).toString().padStart(2, '0')}-${reviewDate.getDate().toString().padStart(2, '0')}`;
+        if (!uniqueDates.has(formattedDate)) {
+            uniqueDates.add(formattedDate);
+            const li = document.createElement('li');
+            li.textContent = formattedDate;
+            reviewDatesList.appendChild(li);
+        }
     });
 }
 
