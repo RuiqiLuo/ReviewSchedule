@@ -4,31 +4,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>复习计划应用</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>计划与复习进度管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        #add-plan {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        #add-plan input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+
+        #add-plan button {
+            padding: 10px 20px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+
+        #today-plans,
+        #review-plans {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button.incomplete {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        button.complete {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 10px;
+            height: 20px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            text-align: center;
+            line-height: 20px;
+            /* 使文本垂直居中 */
+            color: white;
+            border-radius: 5px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: background-color 0.5s ease;
+        }
+
+        /* 根据进度条的完成百分比改变颜色 */
+        .progress-bar.low {
+            background-color: #d3d3d3;
+        }
+
+        .progress-bar.medium {
+            background-color: #ff9900;
+        }
+
+        .progress-bar.high {
+            background-color: #4CAF50;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>复习计划应用</h1>
+    <h1>今日计划与复习进度管理</h1>
     <div id="add-plan">
-        <input type="text" id="plan-input" placeholder="添加每日计划">
+        <input type="text" id="plan-input" placeholder="输入今日计划">
         <button onclick="addPlan()">添加计划</button>
     </div>
     <div id="today-plans">
-        <h2>今天的计划</h2>
+        <h2>今日计划</h2>
         <ul id="today-plans-list"></ul>
         <div class="progress-container">
-            <div class="progress-bar" id="today-progress-bar">0%</div>
+            <div id="today-progress-bar" class="progress-bar"></div>
         </div>
     </div>
     <div id="review-plans">
-        <h2>今天应该复习的计划</h2>
+        <h2>复习计划</h2>
         <ul id="review-plans-list"></ul>
         <div class="progress-container">
-            <div class="progress-bar" id="review-progress-bar">0%</div>
+            <div id="review-progress-bar" class="progress-bar"></div>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        // 获取当前日期
+        const currentDate = new Date();
+
+        // 从 local Storage 加载计划
+        const todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || [];
+        const reviewPlansStatus = JSON.parse(localStorage.getItem('reviewPlansStatus')) || {};
+
+        // 添加计划
+        function addPlan() {
+            const planInput = document.getElementById('plan-input');
+            const plan = planInput.value.trim();
+            if (plan) {
+                todayPlans.push({ plan: plan, completed: false });
+                savePlans();
+                planInput.value = '';
+                displayTodayPlans();
+                displayProgress();
+            }
+        }
+
+        // 保存计划到 local Storage
+        function savePlans() {
+            localStorage.setItem('todayPlans', JSON.stringify(todayPlans));
+            localStorage.setItem('reviewPlansStatus', JSON.stringify(reviewPlansStatus));
+        }
+
+        // 显示今天的计划
+        function displayTodayPlans() {
+            const todayPlansList = document.getElementById('today-plans-list');
+            todayPlansList.innerHTML = '';
+            todayPlans.forEach((planObj, index) => {
+                const li = document.createElement('li');
+                const button = document.createElement('button');
+                button.textContent = planObj.completed ? '已完成' : '未完成';
+                button.classList.add(planObj.completed ? 'complete' : 'incomplete');
+                button.onclick = function () { toggleComplete(index); };
+                li.appendChild(document.createTextNode(planObj.plan));
+                li.appendChild(button);
+                todayPlansList.appendChild(li);
+            });
+            displayProgress();
+        }
+
+        // 切换计划的完成状态
+        function toggleComplete(index) {
+            todayPlans[index].completed = !todayPlans[index].completed;
+            savePlans();
+            displayTodayPlans();
+            const todayProgressBar = document.getElementById('today-progress-bar');
+            updateProgressBarColor(todayProgressBar, parseInt(todayProgressBar.textContent));
+        }
+
+        // 打印今天应该复习的日期
+        function displayReviewPlans() {
+            const intervals = [1, 2, 4, 7, 15, 30, 60, 90, 180, 365];
+            const reviewDatesList = document.getElementById('review-plans-list');
+            reviewDatesList.innerHTML = '';
+            intervals.forEach((interval) => {
+                const reviewDate = new Date(currentDate);
+                reviewDate.setDate(currentDate.getDate() - interval);
+                const formattedDate = `${reviewDate.getFullYear()}-${(reviewDate.getMonth() + 1).toString().padStart(2, '0')}-${reviewDate.getDate().toString().padStart(2, '0')}`;
+                const li = document.createElement('li');
+                const status = reviewPlansStatus[formattedDate] || false;
+                const button = document.createElement('button');
+                button.textContent = status ? '已完成' : '未完成';
+                button.classList.add(status ? 'complete' : 'incomplete');
+                button.onclick = function () { toggleReviewComplete(formattedDate); };
+                li.appendChild(document.createTextNode(`复习: ${formattedDate}`));
+                li.appendChild(button);
+                reviewDatesList.appendChild(li);
+            });
+            displayProgress();
+        }
+
+        // 切换复习计划的完成状态
+        function toggleReviewComplete(date) {
+            reviewPlansStatus[date] = !reviewPlansStatus[date];
+            savePlans();
+            displayReviewPlans();
+            displayProgress();
+            const reviewProgressBar = document.getElementById('review-progress-bar');
+            updateProgressBarColor(reviewProgressBar, parseInt(reviewProgressBar.textContent));
+        }
+
+        // 显示进度条
+        function displayProgress() {
+            const todayCompleted = todayPlans.filter(plan => plan.completed).length;
+            const todayTotal = todayPlans.length;
+            const todayProgress = todayTotal > 0 ? (todayCompleted / todayTotal * 100).toFixed(0) : 0;
+
+            const reviewCompleted = Object.values(reviewPlansStatus).filter(status => status).length;
+            const reviewTotal = Object.keys(reviewPlansStatus).length;
+            const reviewProgress = reviewTotal > 0 ? (reviewCompleted / reviewTotal * 100).toFixed(0) : 0;
+
+            const todayProgressBar = document.getElementById('today-progress-bar');
+            const reviewProgressBar = document.getElementById('review-progress-bar');
+
+            todayProgressBar.style.width = `${todayProgress}%`;
+            todayProgressBar.textContent = `${todayProgress}%`;
+            updateProgressBarColor(todayProgressBar, todayProgress);
+
+            reviewProgressBar.style.width = `${reviewProgress}%`;
+            reviewProgressBar.textContent = `${reviewProgress}%`;
+            updateProgressBarColor(reviewProgressBar, reviewProgress);
+        }
+
+        // 更新进度条的颜色
+        function updateProgressBarColor(progressBar, progress) {
+            const container = progressBar.parentElement;
+            if (progress < 33) {
+                container.classList.remove('high', 'medium');
+                container.classList.add('low');
+            } else if (progress < 67) {
+                container.classList.remove('low', 'high');
+                container.classList.add('medium');
+            } else {
+                container.classList.remove('low', 'medium');
+                container.classList.add('high');
+            }
+        }
+
+        // 初始化显示今天的计划和复习计划
+        window.onload = () => {
+            displayTodayPlans();
+            displayReviewPlans();
+        };
+    </script>
 </body>
 
 </html>

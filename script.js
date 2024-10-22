@@ -90,14 +90,31 @@ function displayProgress() {
 
     todayProgressBar.style.width = `${todayProgress}%`;
     todayProgressBar.textContent = `${todayProgress}%`;
+    updateProgressBarColor(todayProgressBar, todayProgress);
 
     reviewProgressBar.style.width = `${reviewProgress}%`;
     reviewProgressBar.textContent = `${reviewProgress}%`;
+    updateProgressBarColor(reviewProgressBar, reviewProgress);
+}
+
+// 更新进度条的颜色
+function updateProgressBarColor(progressBar, progress) {
+    const container = progressBar.parentElement;
+    if (progress < 33) {
+        container.classList.remove('high', 'medium');
+        container.classList.add('low');
+    } else if (progress < 67) {
+        container.classList.remove('low', 'high');
+        container.classList.add('medium');
+    } else {
+        container.classList.remove('low', 'medium');
+        container.classList.add('high');
+    }
 }
 
 // 初始化显示今天的计划和复习计划
 window.onload = () => {
     displayTodayPlans();
     displayReviewPlans();
-    document.getElementById('plan-input').focus();
-};
+    document.getElementById('plan-input')
+}

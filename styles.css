@@ -51,7 +51,6 @@ button {
 
 .progress-bar {
     height: 100%;
-    background-color: #d3d3d3;
     text-align: center;
     line-height: 20px;
     /* 使文本垂直居中 */
@@ -60,4 +59,18 @@ button {
     position: absolute;
     left: 0;
     top: 0;
+    transition: background-color 0.5s ease;
+}
+
+/* 根据进度条的完成百分比改变颜色 */
+.progress-bar.low {
+    background-color: #d3d3d3;
+}
+
+.progress-bar.medium {
+    background-color: #ff9900;
+}
+
+.progress-bar.high {
+    background-color: #4CAF50;
 }
